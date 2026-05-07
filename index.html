@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attention and Transformers - DL&GenAI Course ET Revision</title>
+    
+    <!-- Google Fonts for Academic Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Explicit MathJax Configuration for robust LaTeX rendering -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']],
+          processEscapes: true,
+          processEnvironments: true
+        },
+        options: {
+          skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+        }
+      };
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        /* ACADEMIC LIGHT THEME CSS */
+        :root {
+            --bg-page: #e9ecef;
+            --bg-slide: #ffffff;
+            --text-main: #2b2d42;
+            --text-muted: #5c677d;
+            --primary-dark: #0a2342; /* Oxford Blue */
+            --primary-accent: #1d3557; 
+            --secondary-accent: #457b9d;
+            --highlight-bg: #f4f7f9;
+            --border-color: #ced4da;
+            --danger: #e63946;
+            --success: #2a9d8f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 50px;
+            padding: 50px 20px;
+            font-family: 'Roboto', sans-serif;
+            color: var(--text-main);
+        }
+
+        /* 16:9 Slide Container */
+        .slide {
+            width: 1280px;
+            height: 720px;
+            background-color: var(--bg-slide);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            padding: 60px 80px;
+            display: flex;
+            flex-direction: column;
+            border-top: 8px solid var(--primary-dark);
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Merriweather', serif;
+            color: var(--primary-dark);
+        }
+
+        h1 {
+            font-size: 52px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 36px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 25px;
+        }
+
+        h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: var(--primary-accent);
+        }
+
+        p, li {
+            font-size: 20px;
+            line-height: 1.6;
+            color: var(--text-main);
+        }
+
+        ul {
+            padding-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        strong {
+            color: var(--primary-dark);
+            font-weight: 700;
+        }
+
+        em {
+            color: var(--secondary-accent);
+            font-style: italic;
+        }
+
+        /* Layouts */
+        .content-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+        }
+
+        /* Component: Math/Definition Box */
+        .math-box {
+            background-color: var(--highlight-bg);
+            border-left: 5px solid var(--secondary-accent);
+            padding: 15px 25px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 22px;
+            overflow-x: auto;
+        }
+
+        .definition-box {
+            border: 1px solid var(--border-color);
+            border-top: 4px solid var(--primary-dark);
+            background-color: #fff;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .definition-title {
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Component: Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background-color: white;
+            font-size: 18px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 14px 20px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--highlight-bg);
+            color: var(--primary-dark);
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+        }
+
+        /* Special Slide Types */
+        .title-slide {
+            justify-content: center;
+            align-items: flex-start;
+            border-top: none;
+            border-left: 16px solid var(--primary-dark);
+            padding-left: 100px;
+        }
+
+        .title-slide h1 {
+            font-size: 58px;
+            max-width: 1000px;
+        }
+
+        .title-slide .subtitle {
+            font-size: 26px;
+            color: var(--secondary-accent);
+            margin-bottom: 40px;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 400;
+        }
+
+        .title-slide .authors {
+            font-size: 20px;
+            color: var(--text-muted);
+            border-left: 3px solid var(--secondary-accent);
+            padding-left: 20px;
+        }
+
+        /* Slide Footer */
+        .slide-footer {
+            position: absolute;
+            bottom: 25px;
+            left: 80px;
+            right: 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+        }
+
+        .slide-footer .affiliation {
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .diagram-container {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .badge-blue { background: #e0f2fe; color: #0369a1; }
+        .badge-red { background: #fee2e2; color: #b91c1c; }
+
+    </style>
+</head>
+<body>
+
+    <!-- SLIDE 1: TITLE -->
+    <div class="slide title-slide">
+        <h1>Theoretical Foundations of Attention & Transformer Architectures</h1>
+        <div class="subtitle">Comprehensive Graduate Mastery Review • Modules & Mathematics</div>
+        <div class="authors">
+            <p><strong>Generative AI and Deep Learning</strong></p>
+            <p>Wadhwani School of AI, IIT Madras</p>
+        </div>
+        <div class="slide-footer" style="border: none;">
+            <span class="affiliation">IIT Madras • Graduate Course Review</span>
+            <span class="page-number">1</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: EMBEDDINGS -->
+    <div class="slide">
+        <h2>1. Word Embeddings: Continuous Meaning Spaces</h2>
+        <div class="content-body grid-2">
+            <div>
+                <p>Computers operate on discrete numerical arrays. Word embeddings map discrete words $w \in V$ to dense vectors in a continuous high-dimensional space $\mathbb{R}^d$.</p>
+                <div class="definition-box">
+                    <div class="definition-title">Semantic Clustering & Vector Arithmetic</div>
+                    <p style="font-size: 18px;">Words sharing semantic meaning cluster together. The geometry of this space captures analogical relationships:</p>
+                    <div class="math-box" style="margin: 10px 0; padding: 10px;">
+                        $$ \vec{King} - \vec{Man} + \vec{Woman} \approx \vec{Queen} $$
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3>Evolution of Embedding Modalities</h3>
+                <ul>
+                    <li>
+                        <span class="badge badge-red">Static Embeddings (Word2Vec, GloVe)</span><br> 
+                        Mapping function $\phi: V \rightarrow \mathbb{R}^d$ is invariant. The vector for "bank" is mathematically identical in "river bank" and "money bank".
+                    </li>
+                    <li>
+                        <span class="badge badge-blue">Contextual Embeddings (BERT, GPT)</span><br> 
+                        Mapping is a function of the entire sequence context $\phi: (w_i, w_{<i}, w_{>i}) \rightarrow \mathbb{R}^d$. Resolves polysemy by generating dynamic representations.
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">2</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 3: RNN BOTTLENECK -->
+    <div class="slide">
+        <h2>2. The RNN Bottleneck: Sequential Compression</h2>
+        <div class="content-body">
+            <p>In classical Encoder-Decoder Recurrent Neural Networks, the sequence is processed via a recurrent update function: $h_t = f(h_{t-1}, x_t)$.</p>
+            
+            <div class="grid-2" style="margin-top: 15px;">
+                <div>
+                    <div class="definition-box">
+                        <div class="definition-title">Information Dilution (The Bottleneck)</div>
+                        <p style="font-size: 18px;">The entire source sequence of length $T$ must be compressed into a single context vector $h_T \in \mathbb{R}^d$. Early token signals $x_1, x_2$ undergo severe dilution as $T \to \infty$.</p>
+                    </div>
+                    <div class="definition-box">
+                        <div class="definition-title">Vanishing Gradients & Sequential Depth</div>
+                        <p style="font-size: 18px;">Backpropagation Through Time (BPTT) requires computing products of Jacobians $\prod_{i=k}^{T} \frac{\partial h_i}{\partial h_{i-1}}$. This recursive chain rule causes gradients to vanish, severely limiting the learning of long-range dependencies over an $O(T)$ sequential path.</p>
+                    </div>
+                </div>
+                <div class="diagram-container" style="justify-content: flex-start; padding-top: 30px;">
+                    <h3>The Squeezed Funnel Paradigm</h3>
+                    <div style="background: var(--highlight-bg); padding: 15px; border-radius: 8px; width: 100%; text-align: center; margin-top: 10px;">
+                        <p style="font-size: 24px; font-weight: 700; color: var(--danger);">Input Sequence (Variable Length)</p>
+                        <p>$\downarrow$</p>
+                        <p style="font-size: 20px; font-weight: 700; border: 2px solid var(--danger); padding: 10px;">Single Context Vector $c$</p>
+                        <p>$\downarrow$</p>
+                        <p style="font-size: 24px; font-weight: 700; color: var(--primary-accent);">Output Sequence</p>
+                    </div>
+                    <p style="font-size: 16px; margin-top: 20px; text-align: center;">Performance degrades dramatically beyond 30-40 tokens due to this architectural stricture.</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">3</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 4: ATTENTION POOLING -->
+    <div class="slide">
+        <h2>3. The Formal Definition of Attention</h2>
+        <div class="content-body">
+            <p>Attention resolves the bottleneck by allowing $O(1)$ parallel access to all tokens. It is fundamentally an <em>attention pooling</em> mechanism over a database of Key-Value pairs.</p>
+            
+            <div class="definition-box">
+                <div class="definition-title">Attention Pooling Formulation</div>
+                <p style="font-size: 18px;">Given a query $q$ and a database of key-value pairs $\mathcal{D} = \{(k_1, v_1), ..., (k_m, v_m)\}$, the attention output is the weighted sum of the values:</p>
+                <div class="math-box">
+                    $$ \text{Attention}(q, \mathcal{D}) \triangleq \sum_{i=1}^{m} \alpha(q, k_i) v_i $$
+                </div>
+                <p style="font-size: 18px; margin-top: 10px;">Where $\alpha(q, k_i)$ is the attention weight. For a standard <strong>Convex Combination</strong> in deep learning, $\alpha$ forms a probability distribution:</p>
+                <div class="math-box" style="padding: 10px 25px;">
+                    $$ \sum_{i=1}^{m} \alpha(q, k_i) = 1 \quad \text{and} \quad \alpha(q, k_i) \ge 0 $$
+                </div>
+            </div>
+            
+            <p style="margin-top: 15px;">The mechanism "pays attention" to the values $v_i$ for which the corresponding query-key similarity score $\alpha$ is high.</p>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">4</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 5: SCALED DOT-PRODUCT MATH -->
+    <div class="slide">
+        <h2>Scaled Dot-Product Attention: Derivation</h2>
+        <div class="content-body grid-2">
+            <div>
+                <p>We derive the scoring function from a Gaussian Kernel $a(q, k_i) = -\frac{1}{2}||q - k_i||^2$.</p>
+                <div class="math-box" style="font-size: 18px;">
+                    $$ a(q, k_i) = q^T k_i - \frac{1}{2}||k_i||^2 - \frac{1}{2}||q||^2 $$
+                </div>
+                <p>When normalized via softmax, the $-\frac{1}{2}||q||^2$ term cancels out. Assuming constant key norms, we drop $-\frac{1}{2}||k_i||^2$, leaving the raw dot product: $q^T k_i$.</p>
+                
+                <div class="definition-box" style="margin-top: 20px;">
+                    <div class="definition-title">The Master Equation</div>
+                    <div class="math-box" style="font-size: 20px; padding: 10px;">
+                        $$ \text{Output} = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right) V $$
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="definition-box">
+                    <div class="definition-title">Variance Control & Gradient Stability</div>
+                    <p style="font-size: 16px;">Assume query $q, k \in \mathbb{R}^{d_k}$ are independent variables with $\mu=0, \sigma^2=1$.</p>
+                    <p style="font-size: 16px; margin-top: 10px;">The variance of their dot product $q^T k = \sum_{i=1}^{d_k} q_i k_i$ grows with dimension:</p>
+                    <div class="math-box" style="font-size: 18px; padding: 10px;">
+                        $$ \text{Var}(q^T k) = d_k $$
+                    </div>
+                    <p style="font-size: 16px; margin-top: 10px;">Large variance pushes softmax into regions with near-zero gradients ($\frac{\partial}{\partial x} \text{softmax} \to 0$). Scaling by $\frac{1}{\sqrt{d_k}}$ rigorously forces the variance back to 1.</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">5</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 6: MULTI-HEAD ATTENTION -->
+    <div class="slide">
+        <h2>4. Transformer Architecture: Multi-Head Attention</h2>
+        <div class="content-body">
+            <p>Sentences exhibit multiple concurrent relationship geometries (syntax, semantics, coreference). A single attention mechanism averages these out. Multi-Head Attention creates parallel representation subspaces.</p>
+
+            <div class="grid-2">
+                <div>
+                    <div class="definition-box">
+                        <div class="definition-title">Subspace Projections</div>
+                        <p style="font-size: 18px;">Original $Q, K, V \in \mathbb{R}^{n \times d_{model}}$ are projected into $h$ lower-dimensional subspaces via learned matrices $W_i^Q, W_i^K, W_i^V \in \mathbb{R}^{d_{model} \times d_k}$:</p>
+                        <div class="math-box" style="font-size: 18px;">
+                            $$ Q_i = QW_i^Q, \quad K_i = KW_i^K, \quad V_i = VW_i^V $$
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="definition-box">
+                        <div class="definition-title">Parallel Execution & Concatenation</div>
+                        <p style="font-size: 18px;">Attention is independently computed for each head $i \in \{1, \dots, h\}$, then concatenated and projected via $W^O \in \mathbb{R}^{hd_v \times d_{model}}$:</p>
+                        <div class="math-box" style="font-size: 18px;">
+                            $$ \text{head}_i = \text{Attention}(Q_i, K_i, V_i) $$
+                            $$ \text{Output} = \text{Concat}(\text{head}_1, \dots, \text{head}_h)W^O $$
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p style="font-size: 18px; margin-top: 10px; text-align: center; color: var(--text-muted);"><em>Each head acts as a specialized "Committee Expert", focusing independently on different contextual signals.</em></p>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">6</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 7: POSITIONAL ENCODINGS -->
+    <div class="slide">
+        <h2>The Mathematics of Order: Positional Encodings</h2>
+        <div class="content-body grid-2">
+            <div>
+                <p>Self-attention is mathematically permutation-invariant ($\mathcal{O}(1)$ bag-of-words). To process sequences, we must explicitly inject spatial order into the continuous embeddings $e_i \in \mathbb{R}^d$.</p>
+                <div class="definition-box">
+                    <div class="definition-title">Sinusoidal Formulation</div>
+                    <p style="font-size: 16px;">For position $p$ and dimension $i \in \{0, \dots, d_{model}-1\}$:</p>
+                    <div class="math-box" style="font-size: 18px; padding: 10px;">
+                        $$ PE_{(p, 2i)} = \sin\left(\frac{p}{10000^{2i/d}}\right) $$
+                        $$ PE_{(p, 2i+1)} = \cos\left(\frac{p}{10000^{2i/d}}\right) $$
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="definition-box">
+                    <div class="definition-title">The Relative Positioning Property</div>
+                    <p style="font-size: 16px;">The model easily learns to attend based on relative positions ($\delta$) because $PE_{p+\delta}$ is a linear transformation of $PE_p$. From sum-of-angles identities:</p>
+                    <div class="math-box" style="font-size: 16px; padding: 10px;">
+                        $$ \sin(\alpha + \beta) = \sin(\alpha)\cos(\beta) + \cos(\alpha)\sin(\beta) $$
+                        $$ \cos(\alpha + \beta) = \cos(\alpha)\cos(\beta) - \sin(\alpha)\sin(\beta) $$
+                    </div>
+                    <p style="font-size: 16px;">Thus, advancing by offset $\delta$ acts as a constant rotation in the embedding space, making relative tracking highly efficient.</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">7</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 7B: POSITIONAL ENCODINGS NUMERICAL -->
+    <div class="slide">
+        <h2>Mathematical Walkthrough: Positional Embeddings</h2>
+        <div class="content-body grid-2">
+            <div>
+                <p>Let us calculate the Positional Encoding (PE) for a specific token in a sequence.</p>
+                <div class="definition-box">
+                    <div class="definition-title">Given Parameters</div>
+                    <ul style="font-size: 18px;">
+                        <li>Embedding dimension $d_{model} = 4$.</li>
+                        <li>Token position $p = 2$ (e.g., the 3rd token, 0-indexed).</li>
+                        <li>Dimension indices $i \in \{0, 1\}$.</li>
+                    </ul>
+                </div>
+                <div class="definition-box">
+                    <div class="definition-title">1. Calculating for $i = 0$ (Dimensions 0 & 1)</div>
+                    <div class="math-box" style="font-size: 16px; padding: 10px;">
+                        $$ PE_{(2, 0)} = \sin\left(\frac{2}{10000^{0/4}}\right) = \sin(2) \approx 0.909 $$
+                        $$ PE_{(2, 1)} = \cos\left(\frac{2}{10000^{0/4}}\right) = \cos(2) \approx -0.416 $$
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="definition-box">
+                    <div class="definition-title">2. Calculating for $i = 1$ (Dimensions 2 & 3)</div>
+                    <div class="math-box" style="font-size: 16px; padding: 10px;">
+                        $$ PE_{(2, 2)} = \sin\left(\frac{2}{10000^{2/4}}\right) = \sin\left(\frac{2}{\sqrt{10000}}\right) = \sin(0.02) \approx 0.020 $$
+                        $$ PE_{(2, 3)} = \cos\left(\frac{2}{10000^{2/4}}\right) = \cos\left(\frac{2}{\sqrt{10000}}\right) = \cos(0.02) \approx 0.999 $$
+                    </div>
+                </div>
+                <div class="diagram-container" style="margin-top: 20px; border-top: 4px solid var(--success);">
+                    <h3>Final PE Vector for Position 2</h3>
+                    <div class="math-box" style="width: 100%; text-align: center;">
+                        $$ PE_2 = \begin{bmatrix} 0.909 \\ -0.416 \\ 0.020 \\ 0.999 \end{bmatrix} $$
+                    </div>
+                    <p style="font-size: 16px; text-align: center; color: var(--text-muted); margin-top: 10px;">This vector is added directly element-wise to the word embedding vector $e_2 \in \mathbb{R}^4$.</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">7b</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 8: STABILIZERS -->
+    <div class="slide">
+        <h2>Architectural Stabilizers for Deep Stacking</h2>
+        <div class="content-body">
+            <p>Training extreme depths (e.g., LLaMA at 126 layers) requires mechanisms to ensure uninterrupted gradient flow and activation stability.</p>
+
+            <div class="grid-2" style="margin-top: 15px;">
+                <div>
+                    <h3>1. Residual ("Skip") Connections</h3>
+                    <div class="math-box" style="font-size: 20px;">
+                        $$ \text{Output} = \text{Sublayer}(x) + x $$
+                    </div>
+                    <ul>
+                        <li>Operates as an "information express lane".</li>
+                        <li>Prevents original sequence signal from catastrophic distortion after multiple non-linear transformations.</li>
+                        <li>Directly combats the vanishing gradient problem.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>2. Layer Normalization</h3>
+                    <p style="font-size: 18px;">Calculated independently for each input vector $x$ over its $H$ hidden units:</p>
+                    <div class="math-box" style="font-size: 18px; padding: 10px;">
+                        $$ \mu = \frac{1}{H}\sum_{i=1}^{H} x_i, \quad \sigma^2 = \frac{1}{H}\sum_{i=1}^{H} (x_i - \mu)^2 $$
+                        $$ \hat{x}_i = \frac{x_i - \mu}{\sqrt{\sigma^2 + \epsilon}} $$
+                        $$ y_i = \gamma_i \hat{x}_i + \beta_i \quad \text{(Scale \& Shift)} $$
+                    </div>
+                    <p style="font-size: 16px;">Smoothes the optimization landscape and enables deep stacking without magnitude explosion.</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">8</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 8B: FULL TRANSFORMER ARCHITECTURE -->
+    <div class="slide">
+        <h2>The Complete Blueprint: Encoder-Decoder Framework</h2>
+        <div class="content-body grid-2">
+            <div>
+                <h3>The Encoder Stack (Understanding)</h3>
+                <p>Processes the source sequence into a continuous representation holding bidirectional context.</p>
+                <div class="definition-box">
+                    <div class="definition-title">Encoder Block ($N \times$)</div>
+                    <ol style="font-size: 18px; padding-left: 30px;">
+                        <li>Multi-Head Self-Attention</li>
+                        <li>Add & Layer Normalization</li>
+                        <li>Position-wise Feed-Forward Network (FFN)</li>
+                        <li>Add & Layer Normalization</li>
+                    </ol>
+                </div>
+            </div>
+            <div>
+                <h3>The Decoder Stack (Generation)</h3>
+                <p>Generates the target sequence autoregressively, attending to both prior outputs and the encoder's state.</p>
+                <div class="definition-box" style="border-top-color: var(--secondary-accent);">
+                    <div class="definition-title">Decoder Block ($N \times$)</div>
+                    <ol style="font-size: 18px; padding-left: 30px;">
+                        <li><strong>Masked</strong> Multi-Head Self-Attention</li>
+                        <li>Add & Layer Normalization</li>
+                        <li style="color: var(--danger); font-weight: bold;">Encoder-Decoder Cross-Attention</li>
+                        <li>Add & Layer Normalization</li>
+                        <li>Position-wise FFN</li>
+                        <li>Add & Layer Normalization</li>
+                    </ol>
+                </div>
+                <div class="diagram-container" style="padding: 15px; margin-top: 15px;">
+                    <p style="font-size: 18px; text-align: center;"><strong>Cross-Attention Bridge:</strong><br> Queries ($Q$) originate from the Decoder.<br> Keys ($K$) and Values ($V$) originate from the Encoder's final output.</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">8b</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 9: VIT -->
+    <div class="slide">
+        <h2>5. Vision Transformers (ViT) & Inductive Biases</h2>
+        <div class="content-body grid-2">
+            <div>
+                <h3>Patch Embeddings Formulation</h3>
+                <p>Standard dense self-attention on $224 \times 224$ pixels requires an intractable $(224^2)^2$ computations. We discretize the image into $N$ patches:</p>
+                <div class="math-box" style="font-size: 18px;">
+                    $$ N = \frac{H \times W}{P \times P} = \frac{224 \times 224}{16 \times 16} = 196 $$
+                </div>
+                <div class="definition-box">
+                    <div class="definition-title">The Convolutional Shortcut</div>
+                    <p style="font-size: 16px;">Patch unrolling and linear projection are executed efficiently in one step via a single 2D Convolution:</p>
+                    <ul style="font-size: 16px;">
+                        <li><code>Kernel Size</code> = Patch Size $P$ ($16$)</li>
+                        <li><code>Stride</code> = Patch Size $P$ ($16$)</li>
+                        <li><code>Out Channels</code> = Embedding Dim $D$ ($768$)</li>
+                    </ul>
+                </div>
+            </div>
+            <div>
+                <h3>The [CLS] Token & Biases</h3>
+                <p>A learnable global token $z_0 \in \mathbb{R}^D$ is prepended: $[z_0, z_1, \dots, z_N]$. It synthesizes global spatial features for the final MLP classifier.</p>
+                
+                <table style="font-size: 16px; margin-top: 15px;">
+                    <tr>
+                        <th style="width: 30%;">Property</th>
+                        <th>CNNs</th>
+                        <th>ViTs</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Inductive Bias</strong></td>
+                        <td>Strong (locality, 2D structure)</td>
+                        <td>Weak (learns from scratch)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Processing</strong></td>
+                        <td>Local receptive fields</td>
+                        <td>Global $\mathcal{O}(1)$ attention</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data Scaling</strong></td>
+                        <td>Highly sample-efficient</td>
+                        <td>Requires immense pre-training (JFT-300M)</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">9</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 9B: VIT NUMERICAL -->
+    <div class="slide">
+        <h2>Mathematical Walkthrough: ViT Patching Dimensionality</h2>
+        <div class="content-body">
+            <p>Let us mathematically compute the transformation of a 2D image into a 1D Transformer sequence.</p>
+            <div class="grid-2" style="margin-top: 15px;">
+                <div>
+                    <div class="definition-box">
+                        <div class="definition-title">1. Given Parameters</div>
+                        <ul style="font-size: 18px;">
+                            <li>Input Image: $H = 224, W = 224$, Channels $C = 3$ (RGB).</li>
+                            <li>Patch Size: $P = 16$.</li>
+                            <li>Target Embedding Dimension: $D = 768$.</li>
+                        </ul>
+                    </div>
+                    <div class="definition-box">
+                        <div class="definition-title">2. Calculating Number of Patches ($N$)</div>
+                        <p style="font-size: 16px;">The image is divided into a non-overlapping grid.</p>
+                        <div class="math-box" style="font-size: 18px; padding: 10px;">
+                            $$ N = \frac{H \times W}{P \times P} = \frac{224 \times 224}{16 \times 16} = 14 \times 14 = 196 $$
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="definition-box" style="border-top-color: var(--secondary-accent);">
+                        <div class="definition-title">3. Flattening and Linear Projection</div>
+                        <p style="font-size: 16px;">Each patch contains $16 \times 16 \times 3 = 768$ raw pixel values. A learned weight matrix $E \in \mathbb{R}^{(P^2C) \times D}$ projects these into the embedding space:</p>
+                        <div class="math-box" style="font-size: 18px; padding: 10px;">
+                            $$ \text{Raw Patches } \mathbb{R}^{196 \times 768} \xrightarrow{E} \text{Embeddings } \mathbb{R}^{196 \times 768} $$
+                        </div>
+                    </div>
+                    <div class="definition-box" style="border-top-color: var(--success);">
+                        <div class="definition-title">4. Final Sequence Geometry with [CLS]</div>
+                        <p style="font-size: 16px;">We prepend the learnable classification token $z_0 \in \mathbb{R}^{768}$. The final tensor shape fed into the Transformer Encoder becomes:</p>
+                        <div class="math-box" style="font-size: 20px; padding: 10px; text-align: center; color: var(--danger);">
+                            $$ \text{Shape} = (196 + 1) \times 768 = \mathbf{197 \times 768} $$
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">9b</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 10: BERT VS GPT -->
+    <div class="slide">
+        <h2>6. Architectural Divergence: BERT vs. GPT</h2>
+        <div class="content-body">
+            <p>Modern Generative AI relies on dismantling the original Encoder-Decoder architecture into specialized halves optimized for unique probabilistic goals.</p>
+
+            <table style="margin-top: 20px;">
+                <tr>
+                    <th style="width: 15%;">Model</th>
+                    <th style="width: 25%;">Architecture</th>
+                    <th style="width: 30%;">Attention Visibility</th>
+                    <th style="width: 30%;">Pre-Training Objective</th>
+                </tr>
+                <tr>
+                    <td style="background: #eef2f5;"><strong>BERT</strong></td>
+                    <td>Encoder-Only</td>
+                    <td><strong>Bidirectional:</strong> Computes $P(w_i | w_{<i}, w_{>i})$</td>
+                    <td><strong>Masked Language Modeling (MLM):</strong> Reconstruct 15% randomly corrupted tokens from full context.</td>
+                </tr>
+                <tr>
+                    <td style="background: #fdf2f2;"><strong>GPT</strong></td>
+                    <td>Decoder-Only</td>
+                    <td><strong>Causal (Masked):</strong> Strictly Unidirectional $P(w_t | w_{<t})$</td>
+                    <td><strong>Autoregressive Next-Token Prediction:</strong> Maximize log-likelihood of the exact next step.</td>
+                </tr>
+            </table>
+
+            <div class="grid-2" style="margin-top: 25px;">
+                <div class="definition-box" style="border-top-color: var(--secondary-accent);">
+                    <div class="definition-title">BERT (Understanding / NLU)</div>
+                    <p style="font-size: 16px;">Superior for Sentiment Analysis, NER, and Extractive QA due to its ability to contextualize tokens globally across the entire sequence geometry.</p>
+                </div>
+                <div class="definition-box" style="border-top-color: var(--danger);">
+                    <div class="definition-title">GPT / LLMs (Generation / NLG)</div>
+                    <p style="font-size: 16px;">The foundation of modern chat models. By strictly predicting the sequence autoregressively, it is mathematically poised for limitless generative continuation.</p>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">10</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 11: LLM PARADIGM -->
+    <div class="slide">
+        <h2>The Modern LLM Paradigm & Scaling Laws</h2>
+        <div class="content-body grid-2">
+            <div>
+                <h3>1. Pre-Training (Massive Scale)</h3>
+                <p>Train autoregressively on trillions of tokens (Web crawls). The model learns foundational syntax, world facts, and reasoning geometries natively.</p>
+                
+                <h3 style="margin-top: 20px;">2. Fine-Tuning (Alignment)</h3>
+                <ul>
+                    <li><strong>SFT (Supervised Fine-Tuning):</strong> Formats raw token prediction into structured Q&A behavior.</li>
+                    <li><strong>RLHF (Reinforcement Learning):</strong> Uses Proximal Policy Optimization (PPO) against a reward model to ensure outputs are Helpful, Harmless, and Honest.</li>
+                </ul>
+            </div>
+            <div>
+                <div class="diagram-container" style="height: 100%; border-color: var(--primary-accent); border-width: 2px;">
+                    <h3>The Empirical Discovery of Scaling</h3>
+                    <p style="text-align: center;">Loss decreases predictably with:<br> <em>Parameters + Data + Compute.</em></p>
+                    <br>
+                    <div class="definition-box" style="border: none; box-shadow: none; padding: 0;">
+                        <div class="definition-title" style="color: var(--danger);">Emergent Abilities</div>
+                        <p style="font-size: 16px;">A phenomenon where models exhibit highly complex, untaught behaviors (e.g., chain-of-thought logic, zero-shot code generation) only after crossing massive capacity thresholds (~10B - 100B parameters).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span class="affiliation">IIT Madras • Generative AI and Deep Learning</span>
+            <span class="page-number">11</span>
+        </div>
+    </div>
+
+    <!-- SLIDE 12: Q&A -->
+    <div class="slide" style="justify-content: center; align-items: center; text-align: center;">
+        <h1 style="font-size: 68px; margin-bottom: 20px;">Questions & Discussion</h1>
+        <p style="font-size: 24px; color: var(--text-muted); max-width: 900px;">Please refer to the mathematical derivations for the Attention Mechanism and Layer Normalization before the upcoming formal evaluations.</p>
+        <div style="margin-top: 50px; font-weight: 700; color: var(--primary-accent); letter-spacing: 2px;">
+            WADHWANI SCHOOL OF AI • IIT MADRAS
+        </div>
+        <div class="slide-footer" style="border: none;">
+            <span class="page-number">12</span>
+        </div>
+    </div>
+
+</body>
+</html>
